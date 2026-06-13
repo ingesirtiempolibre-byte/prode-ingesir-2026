@@ -1182,10 +1182,12 @@ function renderInicio() {
 
   // Mis stats desde ranking
   const yo = rankingData.find(r => r.email && r.email.toLowerCase() === currentUser.email?.toLowerCase())
-           || rankingData.find(r => r.nombre && r.nombre.toLowerCase() === currentUser.nombre?.toLowerCase());
+           || rankingData.find(r => r.nombre && r.nombre.toLowerCase() === currentUser.nombre?.toLowerCase())
+           || rankingData.find(r => r.nombre && currentUser.nombre && r.nombre.toLowerCase().includes(currentUser.nombre.split(' ')[0].toLowerCase()));
   if (yo) {
-    const pos = rankingData.sort((a,b) => Number(b.puntos)-Number(a.puntos)).indexOf(yo) + 1;
-    document.getElementById('stat-pts').textContent = yo.puntos || '0';
+    const sorted = [...rankingData].sort((a,b) => Number(b.puntos_total||b.puntos||0) - Number(a.puntos_total||a.puntos||0));
+    const pos = sorted.findIndex(r => r.nombre === yo.nombre) + 1;
+    document.getElementById('stat-pts').textContent = yo.puntos_total || yo.puntos || '0';
     document.getElementById('stat-pos').textContent = pos + '°';
     document.getElementById('stat-exactos').textContent = yo.exactos || '0';
   }
@@ -1448,19 +1450,23 @@ function renderRanking() {
   document.getElementById('ranking-list').innerHTML = sorted.length
     ? sorted.map((r, i) => {
       const esYo = (r.email && r.email.toLowerCase() === currentUser.email?.toLowerCase())
-                || (r.nombre && r.nombre.toLowerCase() === currentUser.nombre?.toLowerCase());
+                || (r.nombre && r.nombre.toLowerCase() === currentUser.nombre?.toLowerCase())
+                || (r.nombre && currentUser.nombre && r.nombre.toLowerCase().includes(currentUser.nombre.split(' ')[0].toLowerCase()));
       const color = r.color || avatarColors[i % avatarColors.length];
       const initials = (r.nombre || 'X').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+      const pts = r.puntos_total || r.puntos || 0;
+      const exactos = r.exactos || 0;
+      const ganador = r.ganador_ok || r.ganador || 0;
       return `
       <div class="ranking-card ${esYo ? 'me' : ''}">
         <div class="rank-pos ${posClasses[i]||''}">${i+1}</div>
         <div class="rank-avatar" style="background:${color}">${initials}</div>
         <div class="rank-info">
           <div class="rank-name">${r.nombre||'–'} ${esYo ? '<span style="font-size:10px;color:var(--gold)">(vos)</span>' : ''}</div>
-          <div class="rank-detail">⭐ ${r.exactos||0} exactos · ✓ ${r.ganador||0} ganador</div>
+          <div class="rank-detail">⭐ ${exactos} exactos · ✓ ${ganador} ganador</div>
         </div>
         <div class="rank-points">
-          <div class="rank-pts-val">${r.puntos||0}</div>
+          <div class="rank-pts-val">${pts}</div>
           <div class="rank-pts-label">pts</div>
         </div>
       </div>`;
