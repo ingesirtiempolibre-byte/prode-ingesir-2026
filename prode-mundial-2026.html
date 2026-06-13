@@ -1172,8 +1172,14 @@ function renderInicio() {
     document.getElementById('stat-exactos').textContent = yo.exactos || '0';
   }
 
-  const live     = allPartidos.filter(p => normalizeEstado(p.estado) === 'En curso');
-  const upcoming = allPartidos.filter(p => normalizeEstado(p.estado) === 'Programado').slice(0, 5);
+  const sortByDateTime = (a, b) => {
+    const da = new Date((a.fecha || '') + 'T' + (a.hora || '00:00') + ':00-03:00');
+    const db = new Date((b.fecha || '') + 'T' + (b.hora || '00:00') + ':00-03:00');
+    return da - db;
+  };
+
+  const live     = allPartidos.filter(p => normalizeEstado(p.estado) === 'En curso').sort(sortByDateTime);
+  const upcoming = allPartidos.filter(p => normalizeEstado(p.estado) === 'Programado').sort(sortByDateTime).slice(0, 8);
 
   document.getElementById('live-count').textContent = live.length + ' en vivo';
   document.getElementById('live-matches').innerHTML = live.length
