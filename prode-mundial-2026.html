@@ -1056,6 +1056,17 @@ function showApp() {
   const initials = currentUser.nombre.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
   document.getElementById('userInitials').firstChild.textContent = initials;
 
+  // Limpiar localStorage de otros usuarios para evitar mezcla de datos
+  try {
+    const myKey = 'pronosticos_' + (currentUser.email || '').toLowerCase();
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('pronosticos_') && k !== myKey) {
+        localStorage.removeItem(k);
+      }
+    }
+  } catch(e) {}
+
   loadAllData();
   setInterval(loadAllData, 120000); // refresh c/2 min
 }
