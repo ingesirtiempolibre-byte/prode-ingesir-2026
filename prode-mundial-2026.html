@@ -1107,7 +1107,7 @@ async function loadAllData() {
     misPronosticos = {};
     prono.forEach(p => {
       if (p.email && p.email.toLowerCase() === currentUser.email?.toLowerCase()) {
-        misPronosticos[p.partido_id || p.id] = {
+        misPronosticos[String(p.partido_id || p.id || '').trim()] = {
           local: p.goles_local,
           visit: p.goles_visitante,
         };
@@ -1226,7 +1226,7 @@ function renderMatchCard(p) {
   const visitant = p.equipo_visitante || p.visitante || 'Visitante';
   const gL       = p.goles_local !== '' && p.goles_local !== undefined ? p.goles_local : '–';
   const gV       = p.goles_visitante !== '' && p.goles_visitante !== undefined ? p.goles_visitante : '–';
-  const id       = p.id || p.partido_id || '';
+  const id       = String(p.partido_id || p.id || '').trim();
 
   const statusClass = isLive ? 'status-live' : isFin ? 'status-fin' : 'status-prog';
   const statusText  = isLive ? '🔴 EN VIVO' : isFin ? 'Finalizado' : (p.hora || '');
@@ -1335,7 +1335,7 @@ function renderPronosticos() {
   document.getElementById('pred-list').innerHTML = disponibles.map(p => {
     const local    = p.equipo_local || p.local || 'Local';
     const visitant = p.equipo_visitante || p.visitante || 'Visitante';
-    const id       = p.id || '';
+    const id       = String(p.partido_id || p.id || p.id_partido || p.api_match_id || '').trim();
     const pred     = misPronosticos[id] || { local: '', visit: '' };
     return `
     <div class="pred-form">
@@ -1383,10 +1383,11 @@ async function guardarPronostico(id, local, visitante) {
     const payload = {
       email: currentUser.email,
       nombre: currentUser.nombre,
-      partido_id: id,
+      partido_id: String(id).trim(),
       goles_local: l,
       goles_visitante: v
     };
+    console.log('Guardando pronóstico:', payload);
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       body: JSON.stringify(payload)
