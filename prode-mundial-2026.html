@@ -1092,7 +1092,7 @@ async function loadAllData() {
     allPronosticos = prono;
     rankingData = ranking;
 
-    // Filtrar mis pronósticos
+    // Filtrar mis pronósticos desde el Sheet
     misPronosticos = {};
     prono.forEach(p => {
       if (p.email && p.email.toLowerCase() === currentUser.email?.toLowerCase()) {
@@ -1102,6 +1102,13 @@ async function loadAllData() {
         };
       }
     });
+
+    // Combinar con los guardados en localStorage (por si hay alguno más reciente)
+    const localKey = 'pronosticos_' + (currentUser.email || '');
+    try {
+      const localData = JSON.parse(localStorage.getItem(localKey) || '{}');
+      Object.assign(misPronosticos, localData);
+    } catch(e) {}
 
     sheetConnected = true;
     setBanner('ok', `✅ Datos actualizados · ${partidos.length} partidos cargados`);
@@ -1356,6 +1363,9 @@ async function guardarPronostico(id, local, visitante) {
 
   misPronosticos[id] = { local: l, visit: v };
   sessionStorage.setItem('pronosticos', JSON.stringify(misPronosticos));
+  // Guardar en localStorage para persistir entre sesiones
+  const localKey = 'pronosticos_' + (currentUser.email || '');
+  try { localStorage.setItem(localKey, JSON.stringify(misPronosticos)); } catch(e) {}
   renderInicio();
 
   try {
