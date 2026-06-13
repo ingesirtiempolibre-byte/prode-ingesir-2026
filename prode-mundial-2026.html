@@ -1443,7 +1443,7 @@ async function guardarPronostico(id, local, visitante) {
 
 // --- RANKING ---
 function renderRanking() {
-  const sorted = [...rankingData].sort((a,b) => Number(b.puntos||0) - Number(a.puntos||0));
+  const sorted = [...rankingData].sort((a,b) => Number(b.puntos_total||b.puntos||0) - Number(a.puntos_total||a.puntos||0));
   const posClasses = ['gold','silver','bronze'];
   const avatarColors = ['#f5a623','#94a3b8','#cd7f32','#3b82f6','#10b981','#8b5cf6','#ef4444','#06b6d4'];
 
