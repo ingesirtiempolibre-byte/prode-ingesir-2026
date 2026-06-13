@@ -914,6 +914,7 @@
 // ============================================================
 const SHEET_ID = '1KGAttz8frs70YMXbLQKh8cV-CMLoA3aAJP41f2jeHig';
 const API_KEY  = 'AIzaSyBXN5OPH3nAMGbT3kXpl15Nk40cr36R5CA';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyASfb9L4K08K4Vkg2BYqqBbXumGI5x3MBX7-QXc2SbNfVVTn0m2izTWbcZW2aTtVV/exec';
 
 const SHEETS = {
   empleados:   'EMPLEADOS',
@@ -1336,14 +1337,30 @@ async function guardarPronostico(id, local, visitante) {
   if (l === '' || v === '') { showToast('Ingresá ambos resultados', true); return; }
 
   misPronosticos[id] = { local: l, visit: v };
-
-  // Guardar en Sheet via Apps Script (si está configurado) o localmente
-  // Por ahora guarda en memoria y muestra toast
-  showToast(`✅ ${local} ${l} - ${v} ${visitante}`);
+  sessionStorage.setItem('pronosticos', JSON.stringify(misPronosticos));
   renderInicio();
 
-  // TODO: Llamar al Apps Script con doPost para guardar en el Sheet
-  // await savePronosticoToSheet(id, l, v);
+  try {
+    const payload = {
+      email: currentUser.email,
+      nombre: currentUser.nombre,
+      partido_id: id,
+      goles_local: l,
+      goles_visitante: v
+    };
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`✅ ${local} ${l} - ${v} ${visitante} guardado!`);
+    } else {
+      showToast(`✅ ${local} ${l} - ${v} ${visitante} (guardado local)`, false);
+    }
+  } catch(err) {
+    showToast(`✅ ${local} ${l} - ${v} ${visitante}`, false);
+  }
 }
 
 // --- RANKING ---
