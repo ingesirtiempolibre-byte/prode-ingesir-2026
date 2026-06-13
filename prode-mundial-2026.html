@@ -1229,7 +1229,19 @@ function renderMatchCard(p) {
   const id       = String(p.partido_id || p.id || '').trim();
 
   const statusClass = isLive ? 'status-live' : isFin ? 'status-fin' : 'status-prog';
-  const statusText  = isLive ? '🔴 EN VIVO' : isFin ? 'Finalizado' : (p.hora || '');
+  // Formatear hora correctamente (puede llegar como objeto Date o string)
+  let horaStr = '';
+  if (p.hora) {
+    if (typeof p.hora === 'string' && p.hora.includes(':')) {
+      horaStr = p.hora.substring(0, 5);
+    } else {
+      try {
+        const h = new Date(p.hora);
+        horaStr = String(h.getHours()).padStart(2,'0') + ':' + String(h.getMinutes()).padStart(2,'0');
+      } catch(e) { horaStr = String(p.hora); }
+    }
+  }
+  const statusText  = isLive ? '🔴 EN VIVO' : isFin ? 'Finalizado' : (horaStr || '');
   const cardClass   = isLive ? 'live' : isFin ? 'finished' : '';
 
   const pred = misPronosticos[id];
@@ -1263,7 +1275,7 @@ function renderMatchCard(p) {
         <div class="score">${gL}</div>
         <div class="score-div">
           <span>:</span>
-          ${!isLive && !isFin ? `<div style="font-size:11px;color:var(--text3);margin-top:4px;">${p.hora || ''}</div>` : ''}
+          ${!isLive && !isFin ? `<div style="font-size:11px;color:var(--text3);margin-top:4px;">${horaStr}</div>` : ''}
         </div>
         <div class="score">${gV}</div>
       </div>
