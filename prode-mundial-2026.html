@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1225,8 +1224,10 @@ function renderMatchCard(p) {
   const isFin    = estado === 'Finalizado';
   const local    = p.equipo_local || p.local || 'Local';
   const visitant = p.equipo_visitante || p.visitante || 'Visitante';
-  const gL       = p.goles_local !== '' && p.goles_local !== undefined ? p.goles_local : '–';
-  const gV       = p.goles_visitante !== '' && p.goles_visitante !== undefined ? p.goles_visitante : '–';
+  const _gL = p.gol_local ?? p.goles_local ?? p.gol_local_pred ?? '';
+  const _gV = p.gol_visitante ?? p.goles_visitante ?? p.gol_visit_pred ?? '';
+  const gL = (_gL !== '' && _gL !== null && _gL !== undefined) ? _gL : '–';
+  const gV = (_gV !== '' && _gV !== null && _gV !== undefined) ? _gV : '–';
   const id       = String(p.partido_id || p.id || '').trim();
 
   const statusClass = isLive ? 'status-live' : isFin ? 'status-fin' : 'status-prog';
