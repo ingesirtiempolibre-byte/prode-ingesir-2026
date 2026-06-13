@@ -1191,8 +1191,8 @@ function renderInicio() {
   }
 
   const sortByDateTime = (a, b) => {
-    const da = new Date((a.fecha || '') + 'T' + (a.hora || '00:00') + ':00-03:00');
-    const db = new Date((b.fecha || '') + 'T' + (b.hora || '00:00') + ':00-03:00');
+    const da = new Date((a.fecha || '') + 'T' + (a.hora_arg || a.hora || '00:00') + ':00-03:00');
+    const db = new Date((b.fecha || '') + 'T' + (b.hora_arg || b.hora || '00:00') + ':00-03:00');
     return da - db;
   };
 
@@ -1229,16 +1229,17 @@ function renderMatchCard(p) {
   const id       = String(p.partido_id || p.id || '').trim();
 
   const statusClass = isLive ? 'status-live' : isFin ? 'status-fin' : 'status-prog';
-  // Formatear hora correctamente (puede llegar como objeto Date o string)
+  // Formatear hora correctamente (HORA_ARG en sheet → hora_arg en objeto)
+  const horaRaw = p.hora_arg || p.hora || '';
   let horaStr = '';
-  if (p.hora) {
-    if (typeof p.hora === 'string' && p.hora.includes(':')) {
-      horaStr = p.hora.substring(0, 5);
+  if (horaRaw) {
+    if (typeof horaRaw === 'string' && horaRaw.includes(':')) {
+      horaStr = horaRaw.substring(0, 5);
     } else {
       try {
-        const h = new Date(p.hora);
+        const h = new Date(horaRaw);
         horaStr = String(h.getHours()).padStart(2,'0') + ':' + String(h.getMinutes()).padStart(2,'0');
-      } catch(e) { horaStr = String(p.hora); }
+      } catch(e) { horaStr = String(horaRaw); }
     }
   }
   const statusText  = isLive ? '🔴 EN VIVO' : isFin ? 'Finalizado' : (horaStr || '');
@@ -1306,8 +1307,8 @@ function renderPartidos() {
     : allPartidos.filter(p => (p.fase || '').includes(currentFilter));
 
   const filtered = [...base].sort((a, b) => {
-    const da = new Date((a.fecha || '') + 'T' + (a.hora || '00:00') + ':00-03:00');
-    const db = new Date((b.fecha || '') + 'T' + (b.hora || '00:00') + ':00-03:00');
+    const da = new Date((a.fecha || '') + 'T' + (a.hora_arg || a.hora || '00:00') + ':00-03:00');
+    const db = new Date((b.fecha || '') + 'T' + (b.hora_arg || b.hora || '00:00') + ':00-03:00');
     return da - db;
   });
 
@@ -1336,8 +1337,8 @@ function renderPronosticos() {
   const disponibles = allPartidos
     .filter(p => normalizeEstado(p.estado) === 'Programado')
     .sort((a, b) => {
-      const da = new Date((a.fecha || '') + 'T' + (a.hora || '00:00') + ':00-03:00');
-      const db = new Date((b.fecha || '') + 'T' + (b.hora || '00:00') + ':00-03:00');
+      const da = new Date((a.fecha || '') + 'T' + (a.hora_arg || a.hora || '00:00') + ':00-03:00');
+      const db = new Date((b.fecha || '') + 'T' + (b.hora_arg || b.hora || '00:00') + ':00-03:00');
       return da - db;
     });
 
@@ -1357,8 +1358,9 @@ function renderPronosticos() {
 
     // Bloqueo por hora: si ya pasaron 10 min desde el inicio del partido
     let bloqueado = false;
-    if (p.fecha && p.hora) {
-      const inicioPartido = new Date(p.fecha + 'T' + p.hora + ':00-03:00').getTime();
+    const horaBloqueo = p.hora_arg || p.hora || '';
+    if (p.fecha && horaBloqueo) {
+      const inicioPartido = new Date(p.fecha + 'T' + horaBloqueo + ':00-03:00').getTime();
       if (ahoraMs > inicioPartido + 10 * 60 * 1000) bloqueado = true;
     }
 
