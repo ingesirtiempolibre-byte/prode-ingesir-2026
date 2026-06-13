@@ -1261,7 +1261,10 @@ function renderMatchCard(p) {
       </div>
       <div class="score-box">
         <div class="score">${gL}</div>
-        <div class="score-div">:</div>
+        <div class="score-div">
+          <span>:</span>
+          ${!isLive && !isFin ? `<div style="font-size:11px;color:var(--text3);margin-top:4px;">${p.hora || ''}</div>` : ''}
+        </div>
         <div class="score">${gV}</div>
       </div>
       <div class="team">
