@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1333,34 +1332,51 @@ function renderPronosticos() {
     return;
   }
 
+  const ahoraMs = Date.now();
+
   document.getElementById('pred-list').innerHTML = disponibles.map(p => {
     const local    = p.equipo_local || p.local || 'Local';
     const visitant = p.equipo_visitante || p.visitante || 'Visitante';
     const id       = String(p.partido_id || p.id || p.id_partido || p.api_match_id || '').trim();
     const pred     = misPronosticos[id] || { local: '', visit: '' };
+
+    // Bloqueo por hora: si ya pasaron 10 min desde el inicio del partido
+    let bloqueado = false;
+    if (p.fecha && p.hora) {
+      const inicioPartido = new Date(p.fecha + 'T' + p.hora + ':00-03:00').getTime();
+      if (ahoraMs > inicioPartido + 10 * 60 * 1000) bloqueado = true;
+    }
+
+    const inputAttr = bloqueado ? 'disabled' : '';
+    const btnHtml = bloqueado
+      ? `<button class="btn-submit" disabled style="background:#555;cursor:not-allowed;">
+           🔒 Pronóstico cerrado
+         </button>`
+      : `<button class="btn-submit" onclick="guardarPronostico('${id}','${local}','${visitant}')">
+           Guardar pronóstico ⚡
+         </button>`;
+
     return `
-    <div class="pred-form">
+    <div class="pred-form" style="${bloqueado ? 'opacity:0.7' : ''}">
       <div class="pred-form-header">
         <span class="pred-form-title">${local} vs ${visitant}</span>
-        <span style="font-size:11px;color:var(--text3)">${p.fecha || ''} · ${p.hora || ''}</span>
+        <span style="font-size:11px;color:var(--text3)">${p.fecha || ''} · ${p.hora || ''}${bloqueado ? ' · 🔒 Cerrado' : ''}</span>
       </div>
       <div class="pred-form-body">
         <div class="pred-team">
           <div class="pred-team-flag">${getFlag(local)}</div>
           <div class="pred-team-name">${local}</div>
-          <input class="pred-input" type="number" min="0" max="20" value="${pred.local}" id="pred-l-${id}" placeholder="0">
+          <input class="pred-input" type="number" min="0" max="20" value="${pred.local}" id="pred-l-${id}" placeholder="0" ${inputAttr}>
         </div>
         <div class="pred-vs">VS</div>
         <div class="pred-team">
           <div class="pred-team-flag">${getFlag(visitant)}</div>
           <div class="pred-team-name">${visitant}</div>
-          <input class="pred-input" type="number" min="0" max="20" value="${pred.visit}" id="pred-v-${id}" placeholder="0">
+          <input class="pred-input" type="number" min="0" max="20" value="${pred.visit}" id="pred-v-${id}" placeholder="0" ${inputAttr}>
         </div>
       </div>
       <div class="pred-form-footer">
-        <button class="btn-submit" onclick="guardarPronostico('${id}','${local}','${visitant}')">
-          Guardar pronóstico ⚡
-        </button>
+        ${btnHtml}
       </div>
     </div>`;
   }).join('');
