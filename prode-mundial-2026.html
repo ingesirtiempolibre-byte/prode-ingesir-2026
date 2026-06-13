@@ -1262,9 +1262,15 @@ function ganadorCorrecto(pred, p) {
 
 // --- PARTIDOS ---
 function renderPartidos() {
-  const filtered = currentFilter === 'todos'
+  const base = currentFilter === 'todos'
     ? allPartidos
     : allPartidos.filter(p => (p.fase || '').includes(currentFilter));
+
+  const filtered = [...base].sort((a, b) => {
+    const da = new Date((a.fecha || '') + 'T' + (a.hora || '00:00') + ':00-03:00');
+    const db = new Date((b.fecha || '') + 'T' + (b.hora || '00:00') + ':00-03:00');
+    return da - db;
+  });
 
   document.getElementById('all-matches').innerHTML = filtered.length
     ? filtered.map(renderMatchCard).join('')
@@ -1288,7 +1294,13 @@ function filterPhase(fase, btn) {
 
 // --- PRONÓSTICOS ---
 function renderPronosticos() {
-  const disponibles = allPartidos.filter(p => normalizeEstado(p.estado) === 'Programado');
+  const disponibles = allPartidos
+    .filter(p => normalizeEstado(p.estado) === 'Programado')
+    .sort((a, b) => {
+      const da = new Date((a.fecha || '') + 'T' + (a.hora || '00:00') + ':00-03:00');
+      const db = new Date((b.fecha || '') + 'T' + (b.hora || '00:00') + ':00-03:00');
+      return da - db;
+    });
 
   if (!disponibles.length) {
     document.getElementById('pred-list').innerHTML =
@@ -1296,7 +1308,7 @@ function renderPronosticos() {
     return;
   }
 
-  document.getElementById('pred-list').innerHTML = disponibles.slice(0, 15).map(p => {
+  document.getElementById('pred-list').innerHTML = disponibles.map(p => {
     const local    = p.equipo_local || p.local || 'Local';
     const visitant = p.equipo_visitante || p.visitante || 'Visitante';
     const id       = p.id || '';
