@@ -43,7 +43,92 @@
     align-items: center;
     justify-content: center;
     padding: 24px;
-    background: linear-gradient(160deg, #0a0e1a 0%, #1a0a2e 50%, #0a1a2e 100%);
+    background: linear-gradient(160deg, #0a1628 0%, #1a3a6b 40%, #74acdf 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .arg-stars {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .arg-star {
+    position: absolute;
+    color: #fff;
+    font-size: 16px;
+    opacity: 0;
+    animation: floatStar 4s ease-in-out infinite;
+  }
+
+  @keyframes floatStar {
+    0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+    20% { opacity: 0.8; }
+    80% { opacity: 0.8; }
+    100% { opacity: 0; transform: translateY(-100vh) rotate(360deg); }
+  }
+
+  .arg-flag-stripe {
+    position: fixed;
+    left: 0; right: 0;
+    height: 8px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .arg-stripe-top { top: 0; background: #74acdf; }
+  .arg-stripe-mid { top: 8px; height: calc(100vh - 16px); background: white; opacity: 0.04; }
+  .arg-stripe-bot { bottom: 0; background: #74acdf; }
+
+  .login-screen > * { position: relative; z-index: 1; }
+
+  .arg-frase {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: #fff;
+    text-align: center;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 8px rgba(0,0,0,.5);
+    max-width: 320px;
+  }
+
+  .arg-counter {
+    background: rgba(116,172,223,.2);
+    border: 1px solid rgba(116,172,223,.4);
+    border-radius: 14px;
+    padding: 10px 20px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .arg-counter-label {
+    font-size: 10px;
+    color: rgba(255,255,255,.7);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .arg-counter-time {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: #fff;
+    letter-spacing: 2px;
+  }
+
+  .arg-sun {
+    font-size: 40px;
+    margin-bottom: 4px;
+    animation: rotateSun 8s linear infinite;
+  }
+
+  @keyframes rotateSun {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
   .login-logo {
@@ -704,8 +789,21 @@
 
 <!-- ========== LOGIN ========== -->
 <div id="login-screen" class="login-screen">
+
+  <!-- Fondo animado Argentina -->
+  <div class="arg-stars" id="arg-stars"></div>
+  <div class="arg-flag-stripe arg-stripe-top"></div>
+  <div class="arg-flag-stripe arg-stripe-bot"></div>
+
   <div class="login-logo">PRODE <span>INGESIR</span></div>
   <div class="login-sub">Mundial 2026 · Ingesir Envasadoras SRL</div>
+
+  <div class="arg-frase">"Muchachos, ahora nos volvimos a ilusionar..." ⭐⭐⭐</div>
+
+  <div class="arg-counter">
+    <div class="arg-counter-label">⚽ Argentina vs Argelia · 16 Jun · Kansas City</div>
+    <div class="arg-counter-time" id="arg-countdown">Calculando...</div>
+  </div>
 
   <div class="login-card">
     <div class="login-title">Ingresá con tu email</div>
@@ -1500,6 +1598,58 @@ function showToast(msg, isError = false) {
 // ============================================================
 // AUTO-LOGIN (si ya hay sesión guardada)
 // ============================================================
+// ============================================================
+// COUNTDOWN ARGENTINA + ESTRELLAS ANIMADAS
+// ============================================================
+function initArgentina() {
+  // Estrellas flotantes
+  const container = document.getElementById('arg-stars');
+  if (container) {
+    for (let i = 0; i < 30; i++) {
+      const star = document.createElement('div');
+      star.className = 'arg-star';
+      star.textContent = ['⭐','🌟','✨','🔵','⚪'][Math.floor(Math.random() * 5)];
+      star.style.left = Math.random() * 100 + '%';
+      star.style.top = Math.random() * 100 + '%';
+      star.style.animationDelay = Math.random() * 4 + 's';
+      star.style.animationDuration = (3 + Math.random() * 4) + 's';
+      star.style.fontSize = (10 + Math.random() * 20) + 'px';
+      container.appendChild(star);
+    }
+  }
+
+  // Contador regresivo hasta Argentina vs Algeria
+  const argPartido = new Date('2026-06-16T22:00:00-03:00');
+  
+  function updateCountdown() {
+    const el = document.getElementById('arg-countdown');
+    if (!el) return;
+    const ahora = new Date();
+    const diff = argPartido - ahora;
+    
+    if (diff <= 0) {
+      el.textContent = '🔴 EN JUEGO AHORA!';
+      return;
+    }
+    
+    const dias  = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const horas = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins  = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const segs  = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    if (dias > 0) {
+      el.textContent = dias + 'd ' + String(horas).padStart(2,'0') + 'h ' + String(mins).padStart(2,'0') + 'm';
+    } else {
+      el.textContent = String(horas).padStart(2,'0') + ':' + String(mins).padStart(2,'0') + ':' + String(segs).padStart(2,'0');
+    }
+  }
+  
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+}
+
+initArgentina();
+
 window.addEventListener('load', () => {
   const saved = sessionStorage.getItem('prode_user');
   if (saved) {
