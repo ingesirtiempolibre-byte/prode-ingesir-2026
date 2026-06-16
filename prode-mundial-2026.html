@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1276,17 +1277,13 @@ function getFechaKey(p) {
 // Formatear fecha para el encabezado de grupo
 function formatDateGroupLabel(fechaKey) {
   if (!fechaKey) return 'Sin fecha';
-  const hoy    = new Date();
-  const manana = new Date(hoy); manana.setDate(hoy.getDate() + 1);
 
-  // Comparar solo fecha local Argentina (UTC-3)
-  const toARStr = (d) => {
-    const ar = new Date(d.getTime() - 3 * 60 * 60 * 1000);
-    return ar.toISOString().substring(0, 10);
-  };
-
-  const hoyStr    = toARStr(hoy);
-  const mananaStr = toARStr(manana);
+  // Obtener fecha de hoy y mañana en Argentina (UTC-3) como string YYYY-MM-DD
+  // sin hacer conversiones que puedan desfasar el día
+  const ahoraAR   = new Date(Date.now() - 3 * 60 * 60 * 1000); // resta 3h a UTC → hora AR
+  const hoyStr    = ahoraAR.toISOString().substring(0, 10);
+  const mananaAR  = new Date(ahoraAR.getTime() + 24 * 60 * 60 * 1000);
+  const mananaStr = mananaAR.toISOString().substring(0, 10);
 
   if (fechaKey === hoyStr) return '🔥 Hoy';
   if (fechaKey === mananaStr) return '⏰ Mañana';
