@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -118,17 +117,6 @@
     font-size: 28px;
     color: #fff;
     letter-spacing: 2px;
-  }
-
-  .arg-sun {
-    font-size: 40px;
-    margin-bottom: 4px;
-    animation: rotateSun 8s linear infinite;
-  }
-
-  @keyframes rotateSun {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
   }
 
   .login-logo {
@@ -394,6 +382,35 @@
     color: var(--text3);
     text-transform: uppercase;
     letter-spacing: .5px;
+  }
+
+  /* DATE GROUP HEADER */
+  .date-group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px 6px;
+  }
+
+  .date-group-label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gold);
+    white-space: nowrap;
+  }
+
+  .date-group-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .date-group-count {
+    font-size: 10px;
+    color: var(--text3);
+    white-space: nowrap;
   }
 
   /* SECTION */
@@ -790,7 +807,6 @@
 <!-- ========== LOGIN ========== -->
 <div id="login-screen" class="login-screen">
 
-  <!-- Fondo animado Argentina -->
   <div class="arg-stars" id="arg-stars"></div>
   <div class="arg-flag-stripe arg-stripe-top"></div>
   <div class="arg-flag-stripe arg-stripe-bot"></div>
@@ -883,6 +899,7 @@
 
     <div class="section-header">
       <div class="section-title">📅 Próximos partidos</div>
+      <div class="section-badge" id="upcoming-count">0</div>
     </div>
     <div id="upcoming-matches">
       <div class="loading">Cargando partidos...</div>
@@ -1116,30 +1133,21 @@ async function doLogin() {
   }
 
   try {
-    // Cargar empleados del sheet
     const emps = await loadEmpleados();
     empleados = emps;
-
-    // Buscar por email O por nombre (flexible)
     const emp = emps.find(e =>
       (e.email && e.email.toLowerCase() === email) ||
       (e.nombre && e.nombre.toLowerCase() === nombre.toLowerCase())
     );
-
     if (!emp && emps.length > 0) {
       errEl.textContent = '❌ Email o nombre no registrado. Pedile al admin que te agregue.';
       errEl.style.display = 'block';
       return;
     }
-
-    // Si no hay empleados cargados aún, permitir entrada con los datos que ingresó
     currentUser = emp || { nombre, email, color: '#f5a623', id: email };
-
     sessionStorage.setItem('prode_user', JSON.stringify(currentUser));
     showApp();
-
   } catch(err) {
-    // Si falla la API, login con datos locales de demostración
     console.warn('Sheet no disponible:', err);
     currentUser = { nombre, email, color: '#f5a623', id: email };
     sessionStorage.setItem('prode_user', JSON.stringify(currentUser));
@@ -1150,23 +1158,17 @@ async function doLogin() {
 function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';
-
   const initials = currentUser.nombre.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
   document.getElementById('userInitials').firstChild.textContent = initials;
-
-  // Limpiar localStorage de otros usuarios para evitar mezcla de datos
   try {
     const myKey = 'pronosticos_' + (currentUser.email || '').toLowerCase();
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k && k.startsWith('pronosticos_') && k !== myKey) {
-        localStorage.removeItem(k);
-      }
+      if (k && k.startsWith('pronosticos_') && k !== myKey) localStorage.removeItem(k);
     }
   } catch(e) {}
-
   loadAllData();
-  setInterval(loadAllData, 120000); // refresh c/2 min
+  setInterval(loadAllData, 120000);
 }
 
 function doLogout() {
@@ -1189,19 +1191,14 @@ document.addEventListener('click', e => {
 // ============================================================
 async function loadAllData() {
   setBanner('connecting', '🔄 Conectando con Google Sheets...');
-
   try {
     const [partidos, prono, ranking] = await Promise.all([
-      loadPartidos(),
-      loadPronosticos(),
-      loadRanking(),
+      loadPartidos(), loadPronosticos(), loadRanking(),
     ]);
-
     allPartidos = partidos;
     allPronosticos = prono;
     rankingData = ranking;
 
-    // Filtrar mis pronósticos desde el Sheet
     misPronosticos = {};
     prono.forEach(p => {
       if (p.email && p.email.toLowerCase() === currentUser.email?.toLowerCase()) {
@@ -1211,8 +1208,6 @@ async function loadAllData() {
         };
       }
     });
-
-    // Combinar con los guardados en localStorage (por si hay alguno más reciente)
     const localKey = 'pronosticos_' + (currentUser.email || '');
     try {
       const localData = JSON.parse(localStorage.getItem(localKey) || '{}');
@@ -1222,16 +1217,12 @@ async function loadAllData() {
     sheetConnected = true;
     setBanner('ok', `✅ Datos actualizados · ${partidos.length} partidos cargados`);
     setTimeout(() => setBanner('', ''), 3000);
-
   } catch(err) {
     console.error('Error cargando datos:', err);
     sheetConnected = false;
     setBanner('error', '⚠️ No se pudo conectar al Sheet. Revisá la API key o los permisos.');
-
-    // Fallback datos demo
     if (!allPartidos.length) loadDemoData();
   }
-
   renderAll();
 }
 
@@ -1242,7 +1233,7 @@ function setBanner(type, msg) {
 }
 
 // ============================================================
-// DATOS DE DEMO (fallback si no hay Sheet)
+// DATOS DE DEMO
 // ============================================================
 function loadDemoData() {
   allPartidos = [
@@ -1253,6 +1244,7 @@ function loadDemoData() {
     { id:'8', fase:'Grupos', grupo:'Group B', equipo_local:'Qatar', equipo_visitante:'Switzerland', fecha:'2026-06-13', hora:'16:00', estadio:'San Francisco', goles_local:'', goles_visitante:'', estado:'Programado' },
     { id:'13', fase:'Grupos', grupo:'Group C', equipo_local:'Brazil', equipo_visitante:'Morocco', fecha:'2026-06-14', hora:'19:00', estadio:'Nueva Jersey', goles_local:'', goles_visitante:'', estado:'Programado' },
     { id:'55', fase:'Grupos', grupo:'Group J', equipo_local:'Argentina', equipo_visitante:'Algeria', fecha:'2026-06-16', hora:'22:00', estadio:'Kansas City', goles_local:'', goles_visitante:'', estado:'Programado' },
+    { id:'60', fase:'Grupos', grupo:'Group H', equipo_local:'Portugal', equipo_visitante:'DR Congo', fecha:'2026-06-17', hora:'16:00', estadio:'Kansas City', goles_local:'', goles_visitante:'', estado:'Programado' },
   ];
   rankingData = [
     { nombre:'Juan García', puntos:'12', exactos:'3', ganador:'3', color:'#3b82f6', email:'juan@empresa.com' },
@@ -1260,6 +1252,91 @@ function loadDemoData() {
     { nombre:'Carlos Pérez', puntos:'7', exactos:'1', ganador:'4', color:'#f59e0b', email:'carlos@empresa.com' },
     { nombre:currentUser.nombre, puntos:'3', exactos:'1', ganador:'0', color:'#f5a623', email:currentUser.email },
   ];
+}
+
+// ============================================================
+// UTILIDADES DE FECHA / HORA
+// ============================================================
+
+// Obtener timestamp de un partido (usa hora_arg si existe, si no hora)
+function getPartidoTimestamp(p) {
+  const fecha = p.fecha || '';
+  const hora  = p.hora_arg || p.hora || '00:00';
+  if (!fecha) return 0;
+  // Parsear hora: puede venir como "HH:MM" o "HH:MM:SS"
+  const horaStr = String(hora).substring(0, 5);
+  return new Date(`${fecha}T${horaStr}:00-03:00`).getTime();
+}
+
+// Obtener sólo la parte de fecha "YYYY-MM-DD"
+function getFechaKey(p) {
+  return p.fecha || '';
+}
+
+// Formatear fecha para el encabezado de grupo
+function formatDateGroupLabel(fechaKey) {
+  if (!fechaKey) return 'Sin fecha';
+  const hoy    = new Date();
+  const manana = new Date(hoy); manana.setDate(hoy.getDate() + 1);
+
+  // Comparar solo fecha local Argentina (UTC-3)
+  const toARStr = (d) => {
+    const ar = new Date(d.getTime() - 3 * 60 * 60 * 1000);
+    return ar.toISOString().substring(0, 10);
+  };
+
+  const hoyStr    = toARStr(hoy);
+  const mananaStr = toARStr(manana);
+
+  if (fechaKey === hoyStr) return '🔥 Hoy';
+  if (fechaKey === mananaStr) return '⏰ Mañana';
+
+  // Formato: "Vie 19 Jun"
+  const [y, m, d] = fechaKey.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  const dias  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${dias[dateObj.getDay()]} ${d} ${meses[m-1]}`;
+}
+
+// Ordenar partidos por fecha+hora ascendente
+function sortByDateTime(arr) {
+  return [...arr].sort((a, b) => getPartidoTimestamp(a) - getPartidoTimestamp(b));
+}
+
+// Agrupar array de partidos por fecha
+function groupByDate(partidos) {
+  const groups = {};
+  const order  = [];
+  for (const p of partidos) {
+    const key = getFechaKey(p);
+    if (!groups[key]) { groups[key] = []; order.push(key); }
+    groups[key].push(p);
+  }
+  return { groups, order };
+}
+
+// Renderizar grupos de fechas como HTML
+function renderDateGroups(partidos, emptyMsg = 'No hay partidos') {
+  if (!partidos.length) {
+    return `<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">${emptyMsg}</div></div>`;
+  }
+  const sorted = sortByDateTime(partidos);
+  const { groups, order } = groupByDate(sorted);
+
+  return order.map(fechaKey => {
+    const label    = formatDateGroupLabel(fechaKey);
+    const items    = groups[fechaKey]; // ya ordenados por hora dentro del sort global
+    const countTxt = items.length === 1 ? '1 partido' : `${items.length} partidos`;
+    return `
+      <div class="date-group-header">
+        <span class="date-group-label">${label}</span>
+        <span class="date-group-line"></span>
+        <span class="date-group-count">${countTxt}</span>
+      </div>
+      ${items.map(renderMatchCard).join('')}
+    `;
+  }).join('');
 }
 
 // ============================================================
@@ -1278,7 +1355,6 @@ function renderInicio() {
   document.getElementById('total-count-hero').textContent = total || '–';
   document.getElementById('total-count-badge').textContent = `${total} partidos`;
 
-  // Mis stats desde ranking
   const yo = rankingData.find(r => r.email && r.email.toLowerCase() === currentUser.email?.toLowerCase())
            || rankingData.find(r => r.nombre && r.nombre.toLowerCase() === currentUser.nombre?.toLowerCase())
            || rankingData.find(r => r.nombre && currentUser.nombre && r.nombre.toLowerCase().includes(currentUser.nombre.split(' ')[0].toLowerCase()));
@@ -1290,23 +1366,20 @@ function renderInicio() {
     document.getElementById('stat-exactos').textContent = yo.exactos || '0';
   }
 
-  const sortByDateTime = (a, b) => {
-    const da = new Date((a.fecha || '') + 'T' + (a.hora_arg || a.hora || '00:00') + ':00-03:00');
-    const db = new Date((b.fecha || '') + 'T' + (b.hora_arg || b.hora || '00:00') + ':00-03:00');
-    return da - db;
-  };
+  const live     = allPartidos.filter(p => normalizeEstado(p.estado) === 'En curso');
+  const upcoming = allPartidos.filter(p => normalizeEstado(p.estado) === 'Programado');
 
-  const live     = allPartidos.filter(p => normalizeEstado(p.estado) === 'En curso').sort(sortByDateTime);
-  const upcoming = allPartidos.filter(p => normalizeEstado(p.estado) === 'Programado').sort(sortByDateTime).slice(0, 8);
+  document.getElementById('live-count').textContent    = live.length + ' en vivo';
+  document.getElementById('upcoming-count').textContent = upcoming.length;
 
-  document.getElementById('live-count').textContent = live.length + ' en vivo';
+  // En vivo: ordenados por hora, SIN agrupar por fecha (generalmente son pocos)
   document.getElementById('live-matches').innerHTML = live.length
-    ? live.map(renderMatchCard).join('')
+    ? sortByDateTime(live).map(renderMatchCard).join('')
     : '<div class="empty"><div class="empty-icon">😴</div><div class="empty-text">No hay partidos en curso</div></div>';
 
-  document.getElementById('upcoming-matches').innerHTML = upcoming.length
-    ? upcoming.map(renderMatchCard).join('')
-    : '<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No hay próximos partidos</div></div>';
+  // Próximos: TODOS agrupados por fecha + ordenados por hora
+  document.getElementById('upcoming-matches').innerHTML =
+    renderDateGroups(upcoming, 'No hay próximos partidos');
 }
 
 function normalizeEstado(e) {
@@ -1324,14 +1397,14 @@ function renderMatchCard(p) {
   const isFin    = estado === 'Finalizado';
   const local    = p.equipo_local || p.local || 'Local';
   const visitant = p.equipo_visitante || p.visitante || 'Visitante';
-  const _gL = p.gol_local ?? p.goles_local ?? p.gol_local_pred ?? '';
-  const _gV = p.gol_visitante ?? p.goles_visitante ?? p.gol_visit_pred ?? '';
+  const _gL = p.gol_local ?? p.goles_local ?? '';
+  const _gV = p.gol_visitante ?? p.goles_visitante ?? '';
   const gL = (_gL !== '' && _gL !== null && _gL !== undefined) ? _gL : '–';
   const gV = (_gV !== '' && _gV !== null && _gV !== undefined) ? _gV : '–';
-  const id       = String(p.partido_id || p.id || '').trim();
+  const id = String(p.partido_id || p.id || '').trim();
 
   const statusClass = isLive ? 'status-live' : isFin ? 'status-fin' : 'status-prog';
-  // Formatear hora correctamente (HORA_ARG en sheet → hora_arg en objeto)
+
   const horaRaw = p.hora_arg || p.hora || '';
   let horaStr = '';
   if (horaRaw) {
@@ -1344,14 +1417,15 @@ function renderMatchCard(p) {
       } catch(e) { horaStr = String(horaRaw); }
     }
   }
-  const statusText  = isLive ? '🔴 EN VIVO' : isFin ? 'Finalizado' : (horaStr || '');
-  const cardClass   = isLive ? 'live' : isFin ? 'finished' : '';
+
+  const statusText = isLive ? '🔴 EN VIVO' : isFin ? 'Finalizado' : (horaStr ? `⏰ ${horaStr}` : 'Por jugar');
+  const cardClass  = isLive ? 'live' : isFin ? 'finished' : '';
 
   const pred = misPronosticos[id];
   let predBadge = '';
   if (pred && pred.local !== '' && pred.local !== undefined) {
     if (isFin) {
-      const exacto   = String(pred.local) === String(p.goles_local) && String(pred.visit) === String(p.goles_visitante);
+      const exacto    = String(pred.local) === String(p.goles_local) && String(pred.visit) === String(p.goles_visitante);
       const ganadorOk = !exacto && ganadorCorrecto(pred, p);
       predBadge = exacto
         ? '<span class="pred-badge pred-ok">⭐ Exacto</span>'
@@ -1376,10 +1450,7 @@ function renderMatchCard(p) {
       </div>
       <div class="score-box">
         <div class="score">${gL}</div>
-        <div class="score-div">
-          <span>:</span>
-          ${!isLive && !isFin ? `<div style="font-size:11px;color:var(--text3);margin-top:4px;">${horaStr}</div>` : ''}
-        </div>
+        <div class="score-div">:</div>
         <div class="score">${gV}</div>
       </div>
       <div class="team">
@@ -1403,21 +1474,14 @@ function ganadorCorrecto(pred, p) {
   return predG === realG;
 }
 
-// --- PARTIDOS ---
+// --- PARTIDOS (fixture completo) ---
 function renderPartidos() {
   const base = currentFilter === 'todos'
     ? allPartidos
     : allPartidos.filter(p => (p.fase || '').includes(currentFilter));
 
-  const filtered = [...base].sort((a, b) => {
-    const da = new Date((a.fecha || '') + 'T' + (a.hora_arg || a.hora || '00:00') + ':00-03:00');
-    const db = new Date((b.fecha || '') + 'T' + (b.hora_arg || b.hora || '00:00') + ':00-03:00');
-    return da - db;
-  });
-
-  document.getElementById('all-matches').innerHTML = filtered.length
-    ? filtered.map(renderMatchCard).join('')
-    : '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">No hay partidos en esta fase</div></div>';
+  document.getElementById('all-matches').innerHTML =
+    renderDateGroups(base, 'No hay partidos en esta fase');
 }
 
 function filterPhase(fase, btn) {
@@ -1437,13 +1501,7 @@ function filterPhase(fase, btn) {
 
 // --- PRONÓSTICOS ---
 function renderPronosticos() {
-  const disponibles = allPartidos
-    .filter(p => normalizeEstado(p.estado) === 'Programado')
-    .sort((a, b) => {
-      const da = new Date((a.fecha || '') + 'T' + (a.hora_arg || a.hora || '00:00') + ':00-03:00');
-      const db = new Date((b.fecha || '') + 'T' + (b.hora_arg || b.hora || '00:00') + ':00-03:00');
-      return da - db;
-    });
+  const disponibles = allPartidos.filter(p => normalizeEstado(p.estado) === 'Programado');
 
   if (!disponibles.length) {
     document.getElementById('pred-list').innerHTML =
@@ -1451,54 +1509,66 @@ function renderPronosticos() {
     return;
   }
 
-  const ahoraMs = Date.now();
+  const ahoraMs  = Date.now();
+  const sorted   = sortByDateTime(disponibles);
+  const { groups, order } = groupByDate(sorted);
 
-  document.getElementById('pred-list').innerHTML = disponibles.map(p => {
-    const local    = p.equipo_local || p.local || 'Local';
-    const visitant = p.equipo_visitante || p.visitante || 'Visitante';
-    const id       = String(p.partido_id || p.id || p.id_partido || p.api_match_id || '').trim();
-    const pred     = misPronosticos[id] || { local: '', visit: '' };
+  document.getElementById('pred-list').innerHTML = order.map(fechaKey => {
+    const label = formatDateGroupLabel(fechaKey);
+    const items = groups[fechaKey];
+    const countTxt = items.length === 1 ? '1 partido' : `${items.length} partidos`;
 
-    // Bloqueo por hora: si ya pasaron 10 min desde el inicio del partido
-    let bloqueado = false;
-    const horaBloqueo = p.hora_arg || p.hora || '';
-    if (p.fecha && horaBloqueo) {
-      const inicioPartido = new Date(p.fecha + 'T' + horaBloqueo + ':00-03:00').getTime();
-      if (ahoraMs > inicioPartido + 10 * 60 * 1000) bloqueado = true;
-    }
+    const formsHtml = items.map(p => {
+      const local    = p.equipo_local || p.local || 'Local';
+      const visitant = p.equipo_visitante || p.visitante || 'Visitante';
+      const id       = String(p.partido_id || p.id || '').trim();
+      const pred     = misPronosticos[id] || { local: '', visit: '' };
 
-    const inputAttr = bloqueado ? 'disabled' : '';
-    const btnHtml = bloqueado
-      ? `<button class="btn-submit" disabled style="background:#555;cursor:not-allowed;">
-           🔒 Pronóstico cerrado
-         </button>`
-      : `<button class="btn-submit" onclick="guardarPronostico('${id}','${local}','${visitant}')">
-           Guardar pronóstico ⚡
-         </button>`;
+      let bloqueado = false;
+      const horaBloqueo = p.hora_arg || p.hora || '';
+      if (p.fecha && horaBloqueo) {
+        const inicioPartido = new Date(p.fecha + 'T' + String(horaBloqueo).substring(0,5) + ':00-03:00').getTime();
+        if (ahoraMs > inicioPartido + 10 * 60 * 1000) bloqueado = true;
+      }
+
+      const inputAttr = bloqueado ? 'disabled' : '';
+      const btnHtml = bloqueado
+        ? `<button class="btn-submit" disabled style="background:#555;cursor:not-allowed;">🔒 Pronóstico cerrado</button>`
+        : `<button class="btn-submit" onclick="guardarPronostico('${id}','${local}','${visitant}')">Guardar pronóstico ⚡</button>`;
+
+      const horaStr = String(p.hora_arg || p.hora || '').substring(0, 5);
+
+      return `
+      <div class="pred-form" style="${bloqueado ? 'opacity:0.7' : ''}">
+        <div class="pred-form-header">
+          <span class="pred-form-title">${local} vs ${visitant}</span>
+          <span style="font-size:11px;color:var(--text3)">${horaStr}${bloqueado ? ' · 🔒' : ''}</span>
+        </div>
+        <div class="pred-form-body">
+          <div class="pred-team">
+            <div class="pred-team-flag">${getFlag(local)}</div>
+            <div class="pred-team-name">${local}</div>
+            <input class="pred-input" type="number" min="0" max="20" value="${pred.local}" id="pred-l-${id}" placeholder="0" ${inputAttr}>
+          </div>
+          <div class="pred-vs">VS</div>
+          <div class="pred-team">
+            <div class="pred-team-flag">${getFlag(visitant)}</div>
+            <div class="pred-team-name">${visitant}</div>
+            <input class="pred-input" type="number" min="0" max="20" value="${pred.visit}" id="pred-v-${id}" placeholder="0" ${inputAttr}>
+          </div>
+        </div>
+        <div class="pred-form-footer">${btnHtml}</div>
+      </div>`;
+    }).join('');
 
     return `
-    <div class="pred-form" style="${bloqueado ? 'opacity:0.7' : ''}">
-      <div class="pred-form-header">
-        <span class="pred-form-title">${local} vs ${visitant}</span>
-        <span style="font-size:11px;color:var(--text3)">${p.fecha || ''} · ${p.hora || ''}${bloqueado ? ' · 🔒 Cerrado' : ''}</span>
+      <div class="date-group-header">
+        <span class="date-group-label">${label}</span>
+        <span class="date-group-line"></span>
+        <span class="date-group-count">${countTxt}</span>
       </div>
-      <div class="pred-form-body">
-        <div class="pred-team">
-          <div class="pred-team-flag">${getFlag(local)}</div>
-          <div class="pred-team-name">${local}</div>
-          <input class="pred-input" type="number" min="0" max="20" value="${pred.local}" id="pred-l-${id}" placeholder="0" ${inputAttr}>
-        </div>
-        <div class="pred-vs">VS</div>
-        <div class="pred-team">
-          <div class="pred-team-flag">${getFlag(visitant)}</div>
-          <div class="pred-team-name">${visitant}</div>
-          <input class="pred-input" type="number" min="0" max="20" value="${pred.visit}" id="pred-v-${id}" placeholder="0" ${inputAttr}>
-        </div>
-      </div>
-      <div class="pred-form-footer">
-        ${btnHtml}
-      </div>
-    </div>`;
+      ${formsHtml}
+    `;
   }).join('');
 }
 
@@ -1506,12 +1576,10 @@ async function guardarPronostico(id, local, visitante) {
   const lEl = document.getElementById(`pred-l-${id}`);
   const vEl = document.getElementById(`pred-v-${id}`);
   const l = lEl.value, v = vEl.value;
-
   if (l === '' || v === '') { showToast('Ingresá ambos resultados', true); return; }
 
   misPronosticos[id] = { local: l, visit: v };
   sessionStorage.setItem('pronosticos', JSON.stringify(misPronosticos));
-  // Guardar en localStorage para persistir entre sesiones
   const localKey = 'pronosticos_' + (currentUser.email || '');
   try { localStorage.setItem(localKey, JSON.stringify(misPronosticos)); } catch(e) {}
   renderInicio();
@@ -1524,11 +1592,7 @@ async function guardarPronostico(id, local, visitante) {
       goles_local: l,
       goles_visitante: v
     };
-    console.log('Guardando pronóstico:', payload);
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
+    const res  = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
     const data = await res.json();
     if (data.ok) {
       showToast(`✅ ${local} ${l} - ${v} ${visitante} guardado!`);
@@ -1543,33 +1607,33 @@ async function guardarPronostico(id, local, visitante) {
 // --- RANKING ---
 function renderRanking() {
   const sorted = [...rankingData].sort((a,b) => Number(b.puntos_total||b.puntos||0) - Number(a.puntos_total||a.puntos||0));
-  const posClasses = ['gold','silver','bronze'];
-  const avatarColors = ['#f5a623','#94a3b8','#cd7f32','#3b82f6','#10b981','#8b5cf6','#ef4444','#06b6d4'];
+  const posClasses    = ['gold','silver','bronze'];
+  const avatarColors  = ['#f5a623','#94a3b8','#cd7f32','#3b82f6','#10b981','#8b5cf6','#ef4444','#06b6d4'];
 
   document.getElementById('ranking-list').innerHTML = sorted.length
     ? sorted.map((r, i) => {
-      const esYo = (r.email && r.email.toLowerCase() === currentUser.email?.toLowerCase())
-                || (r.nombre && r.nombre.toLowerCase() === currentUser.nombre?.toLowerCase())
-                || (r.nombre && currentUser.nombre && r.nombre.toLowerCase().includes(currentUser.nombre.split(' ')[0].toLowerCase()));
-      const color = r.color || avatarColors[i % avatarColors.length];
-      const initials = (r.nombre || 'X').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
-      const pts = r.puntos_total || r.puntos || 0;
-      const exactos = r.exactos || 0;
-      const ganador = r.ganador_ok || r.ganador || 0;
-      return `
-      <div class="ranking-card ${esYo ? 'me' : ''}">
-        <div class="rank-pos ${posClasses[i]||''}">${i+1}</div>
-        <div class="rank-avatar" style="background:${color}">${initials}</div>
-        <div class="rank-info">
-          <div class="rank-name">${r.nombre||'–'} ${esYo ? '<span style="font-size:10px;color:var(--gold)">(vos)</span>' : ''}</div>
-          <div class="rank-detail">⭐ ${exactos} exactos · ✓ ${ganador} ganador</div>
-        </div>
-        <div class="rank-points">
-          <div class="rank-pts-val">${pts}</div>
-          <div class="rank-pts-label">pts</div>
-        </div>
-      </div>`;
-    }).join('')
+        const esYo = (r.email && r.email.toLowerCase() === currentUser.email?.toLowerCase())
+                  || (r.nombre && r.nombre.toLowerCase() === currentUser.nombre?.toLowerCase())
+                  || (r.nombre && currentUser.nombre && r.nombre.toLowerCase().includes(currentUser.nombre.split(' ')[0].toLowerCase()));
+        const color    = r.color || avatarColors[i % avatarColors.length];
+        const initials = (r.nombre || 'X').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+        const pts      = r.puntos_total || r.puntos || 0;
+        const exactos  = r.exactos || 0;
+        const ganador  = r.ganador_ok || r.ganador || 0;
+        return `
+        <div class="ranking-card ${esYo ? 'me' : ''}">
+          <div class="rank-pos ${posClasses[i]||''}">${i+1}</div>
+          <div class="rank-avatar" style="background:${color}">${initials}</div>
+          <div class="rank-info">
+            <div class="rank-name">${r.nombre||'–'} ${esYo ? '<span style="font-size:10px;color:var(--gold)">(vos)</span>' : ''}</div>
+            <div class="rank-detail">⭐ ${exactos} exactos · ✓ ${ganador} ganador</div>
+          </div>
+          <div class="rank-points">
+            <div class="rank-pts-val">${pts}</div>
+            <div class="rank-pts-label">pts</div>
+          </div>
+        </div>`;
+      }).join('')
     : '<div class="empty"><div class="empty-icon">🏆</div><div class="empty-text">El ranking se actualiza automáticamente</div></div>';
 }
 
@@ -1596,29 +1660,23 @@ function showToast(msg, isError = false) {
 }
 
 // ============================================================
-// AUTO-LOGIN (si ya hay sesión guardada)
-// ============================================================
-// ============================================================
 // COUNTDOWN ARGENTINA + ESTRELLAS ANIMADAS
 // ============================================================
 function initArgentina() {
-  // Fin del partido Argentina (2 horas despues del inicio)
   const argInicio = new Date('2026-06-16T22:00:00-03:00');
   const argFin    = new Date('2026-06-17T00:00:00-03:00');
   const ahora     = new Date();
 
-  // Si el partido ya termino, ocultar todo el bloque de Argentina
   if (ahora > argFin) {
-    const frase = document.querySelector('.arg-frase');
+    const frase   = document.querySelector('.arg-frase');
     const counter = document.querySelector('.arg-counter');
-    const stars = document.getElementById('arg-stars');
+    const stars   = document.getElementById('arg-stars');
     if (frase) frase.style.display = 'none';
     if (counter) counter.style.display = 'none';
     if (stars) stars.style.display = 'none';
     return;
   }
 
-  // Estrellas flotantes
   const container = document.getElementById('arg-stars');
   if (container) {
     for (let i = 0; i < 30; i++) {
@@ -1626,47 +1684,37 @@ function initArgentina() {
       star.className = 'arg-star';
       star.textContent = ['⭐','🌟','✨','🔵','⚪'][Math.floor(Math.random() * 5)];
       star.style.left = Math.random() * 100 + '%';
-      star.style.top = Math.random() * 100 + '%';
-      star.style.animationDelay = Math.random() * 4 + 's';
+      star.style.top  = Math.random() * 100 + '%';
+      star.style.animationDelay    = Math.random() * 4 + 's';
       star.style.animationDuration = (3 + Math.random() * 4) + 's';
       star.style.fontSize = (10 + Math.random() * 20) + 'px';
       container.appendChild(star);
     }
   }
 
-  // Contador regresivo hasta Argentina vs Argelia
   function updateCountdown() {
-    const el = document.getElementById('arg-countdown');
+    const el  = document.getElementById('arg-countdown');
     if (!el) return;
-    const now = new Date();
+    const now  = new Date();
     const diff = argInicio - now;
-    
     if (now > argFin) {
-      // Partido terminado - ocultar todo
-      const frase = document.querySelector('.arg-frase');
+      const frase   = document.querySelector('.arg-frase');
       const counter = document.querySelector('.arg-counter');
       if (frase) frase.style.display = 'none';
       if (counter) counter.style.display = 'none';
       return;
     }
-
-    if (diff <= 0) {
-      el.textContent = '🔴 EN JUEGO AHORA!';
-      return;
-    }
-    
-    const dias  = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const horas = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const mins  = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const segs  = Math.floor((diff % (1000 * 60)) / 1000);
-    
+    if (diff <= 0) { el.textContent = '🔴 EN JUEGO AHORA!'; return; }
+    const dias  = Math.floor(diff / (1000*60*60*24));
+    const horas = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+    const mins  = Math.floor((diff % (1000*60*60)) / (1000*60));
+    const segs  = Math.floor((diff % (1000*60)) / 1000);
     if (dias > 0) {
       el.textContent = dias + 'd ' + String(horas).padStart(2,'0') + 'h ' + String(mins).padStart(2,'0') + 'm';
     } else {
       el.textContent = String(horas).padStart(2,'0') + ':' + String(mins).padStart(2,'0') + ':' + String(segs).padStart(2,'0');
     }
   }
-  
   updateCountdown();
   setInterval(updateCountdown, 1000);
 }
@@ -1676,19 +1724,10 @@ initArgentina();
 window.addEventListener('load', () => {
   const saved = sessionStorage.getItem('prode_user');
   if (saved) {
-    try {
-      currentUser = JSON.parse(saved);
-      showApp();
-    } catch(e) { /* mostrar login */ }
+    try { currentUser = JSON.parse(saved); showApp(); } catch(e) {}
   }
-
-  // Enter en login
-  document.getElementById('login-nombre').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
-  document.getElementById('login-email').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
+  document.getElementById('login-nombre').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('login-email').addEventListener('keydown',  e => { if (e.key === 'Enter') doLogin(); });
 });
 </script>
 </body>
