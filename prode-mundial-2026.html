@@ -534,6 +534,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .match-venue { font-size: 10px; color: var(--text3); }
@@ -1550,11 +1552,13 @@ function renderMatchCard(p) {
     if (isFin) {
       const exacto    = String(pred.local) === String(p.goles_local) && String(pred.visit) === String(p.goles_visitante);
       const ganadorOk = !exacto && ganadorCorrecto(pred, p);
-      predBadge = exacto
+      const miPred = `<span style="font-size:10px;color:var(--text3);">Mi pred: ${pred.local}-${pred.visit}</span>`;
+      const badge = exacto
         ? '<span class="pred-badge pred-ok">⭐ Exacto</span>'
         : ganadorOk
         ? '<span class="pred-badge pred-pending">✓ Ganador</span>'
         : '<span class="pred-badge pred-fail">✗ Falló</span>';
+      predBadge = `<span style="display:flex;align-items:center;gap:6px;">${miPred}${badge}</span>`;
     } else {
       predBadge = `<span class="pred-badge pred-pending">Mi pred: ${pred.local}-${pred.visit}</span>`;
     }
