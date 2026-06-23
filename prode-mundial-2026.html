@@ -1390,11 +1390,19 @@ function loadDemoData() {
 // Obtener timestamp de un partido (usa hora_arg si existe, si no hora)
 function getPartidoTimestamp(p) {
   const fecha = p.fecha || '';
-  const hora  = p.hora_arg || p.hora || '00:00';
   if (!fecha) return 0;
-  // Parsear hora: puede venir como "HH:MM" o "HH:MM:SS"
-  const horaStr = String(hora).substring(0, 5);
-  return new Date(`${fecha}T${horaStr}:00-03:00`).getTime();
+
+  let hora = String(p.hora_arg || p.hora || '00:00').trim();
+  // Separar horas y minutos de forma robusta (soporta "1:00", "01:00", "1:00:00", etc.)
+  const partes = hora.split(':');
+  let hh = parseInt(partes[0], 10);
+  let mm = parseInt(partes[1], 10);
+  if (isNaN(hh)) hh = 0;
+  if (isNaN(mm)) mm = 0;
+  const horaStr = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+
+  const ts = new Date(`${fecha}T${horaStr}:00-03:00`).getTime();
+  return isNaN(ts) ? 0 : ts;
 }
 
 // Obtener sólo la parte de fecha "YYYY-MM-DD"
@@ -1437,12 +1445,21 @@ function renderDateGroups(partidos, emptyMsg = 'No hay partidos') {
   if (!partidos.length) {
     return `<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">${emptyMsg}</div></div>`;
   }
-  const sorted = sortByDateTime(partidos);
-  const { groups, order } = groupByDate(sorted);
+
+  // Agrupar primero por fecha (string exacto, sin ambigüedad de timestamp)
+  const { groups, order } = groupByDate(partidos);
+
+  // Ordenar las claves de fecha alfabéticamente (YYYY-MM-DD ordena igual cronológicamente)
+  order.sort();
+
+  // Dentro de cada grupo, ordenar por hora
+  order.forEach(fechaKey => {
+    groups[fechaKey] = sortByDateTime(groups[fechaKey]);
+  });
 
   return order.map(fechaKey => {
     const label    = formatDateGroupLabel(fechaKey);
-    const items    = groups[fechaKey]; // ya ordenados por hora dentro del sort global
+    const items    = groups[fechaKey];
     const countTxt = items.length === 1 ? '1 partido' : `${items.length} partidos`;
     return `
       <div class="date-group-header">
@@ -1628,8 +1645,11 @@ function renderPronosticos() {
   }
 
   const ahoraMs  = Date.now();
-  const sorted   = sortByDateTime(disponibles);
-  const { groups, order } = groupByDate(sorted);
+  const { groups, order } = groupByDate(disponibles);
+  order.sort();
+  order.forEach(fechaKey => {
+    groups[fechaKey] = sortByDateTime(groups[fechaKey]);
+  });
 
   document.getElementById('pred-list').innerHTML = order.map(fechaKey => {
     const label = formatDateGroupLabel(fechaKey);
