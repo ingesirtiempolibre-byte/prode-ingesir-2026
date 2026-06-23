@@ -1406,17 +1406,8 @@ function getFechaKey(p) {
 function formatDateGroupLabel(fechaKey) {
   if (!fechaKey) return 'Sin fecha';
 
-  // Obtener fecha de hoy y mañana en Argentina (UTC-3) como string YYYY-MM-DD
-  // sin hacer conversiones que puedan desfasar el día
-  const ahoraAR   = new Date(Date.now() - 3 * 60 * 60 * 1000); // resta 3h a UTC → hora AR
-  const hoyStr    = ahoraAR.toISOString().substring(0, 10);
-  const mananaAR  = new Date(ahoraAR.getTime() + 24 * 60 * 60 * 1000);
-  const mananaStr = mananaAR.toISOString().substring(0, 10);
-
-  if (fechaKey === hoyStr) return '🔥 Hoy';
-  if (fechaKey === mananaStr) return '⏰ Mañana';
-
-  // Formato: "Vie 19 Jun"
+  // Siempre mostramos la fecha exacta (sin lógica de "Hoy/Mañana")
+  // para evitar errores de zona horaria que ocultaban partidos.
   const [y, m, d] = fechaKey.split('-').map(Number);
   const dateObj = new Date(y, m - 1, d);
   const dias  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
