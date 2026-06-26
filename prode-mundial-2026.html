@@ -1048,6 +1048,14 @@
     background: rgba(255,255,255,.02);
   }
 
+  .bracket-match-meta-top {
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: .3px;
+  }
+
   /* BRACKET HORIZONTAL (desktop) */
   .bracket-horizontal {
     display: none;
@@ -1069,7 +1077,7 @@
     flex-direction: column;
     justify-content: center;
     gap: 14px;
-    min-width: 190px;
+    min-width: 215px;
   }
 
   .bracket-h-col-title {
@@ -1090,6 +1098,20 @@
   }
 
   .bracket-h-match.definido { border-color: rgba(245,166,35,.35); }
+
+  .bracket-h-match-meta {
+    padding: 4px 10px;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: .2px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,.02);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   .bracket-h-team {
     display: flex;
@@ -1904,13 +1926,15 @@ function renderBracket() {
 
     const horaRaw = p.hora_arg || p.hora || '';
     const horaStr = String(horaRaw).substring(0, 5);
-    const fechaStr = p.fecha || '';
+    const fechaStr = p.fecha ? formatDateGroupLabel(p.fecha) : '';
+    const metaTexto = [fechaStr, horaStr ? horaStr + 'hs' : '', p.estadio ? '📍 ' + p.estadio : '']
+      .filter(Boolean).join(' · ');
 
     return `
       <div class="bracket-match ${esFinalizado ? 'definido' : ''}">
+        ${metaTexto ? `<div class="bracket-match-meta bracket-match-meta-top">${metaTexto}</div>` : ''}
         ${renderBracketTeam(local, gL, gV, esFinalizado, ganoLocal)}
         ${renderBracketTeam(visitante, gV, gL, esFinalizado, ganoVisitante)}
-        <div class="bracket-match-meta">📍 ${p.estadio || ''} ${fechaStr ? '· ' + fechaStr : ''} ${horaStr ? '· ' + horaStr : ''}</div>
       </div>`;
   }
 
@@ -1950,6 +1974,12 @@ function renderBracketHorizontal(partidosElim, fasesOrden, renderTeamFn) {
     const ganoLocal     = esFinalizado && Number(gL) > Number(gV);
     const ganoVisitante = esFinalizado && Number(gV) > Number(gL);
 
+    const horaRaw = p.hora_arg || p.hora || '';
+    const horaStr = String(horaRaw).substring(0, 5);
+    const fechaStr = p.fecha ? formatDateGroupLabel(p.fecha) : '';
+    const metaTexto = [fechaStr, horaStr ? horaStr + 'hs' : '', p.estadio ? '📍 ' + p.estadio : '']
+      .filter(Boolean).join(' · ');
+
     function team(nombre, gol, gano) {
       const esPendiente = esCodigoPendiente(nombre);
       let clase = '';
@@ -1966,6 +1996,7 @@ function renderBracketHorizontal(partidosElim, fasesOrden, renderTeamFn) {
 
     return `
       <div class="bracket-h-match ${esFinalizado ? 'definido' : ''}">
+        ${metaTexto ? `<div class="bracket-h-match-meta">${metaTexto}</div>` : ''}
         ${team(local, gL, ganoLocal)}
         ${team(visitante, gV, ganoVisitante)}
       </div>`;
