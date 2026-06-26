@@ -71,6 +71,35 @@
     100% { opacity: 0; transform: translateY(-100vh) rotate(360deg); }
   }
 
+  .arg-flag-fall {
+    position: absolute;
+    top: -40px;
+    width: 28px;
+    height: 18px;
+    opacity: 0;
+    animation: fallFlag linear infinite;
+    background: linear-gradient(to bottom, #74acdf 0%, #74acdf 33%, #fff 33%, #fff 66%, #74acdf 66%, #74acdf 100%);
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+
+  .arg-flag-fall::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 6px; height: 6px;
+    background: #f5a623;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  @keyframes fallFlag {
+    0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+    10% { opacity: 0.9; }
+    90% { opacity: 0.9; }
+    100% { opacity: 0; transform: translateY(110vh) rotate(20deg); }
+  }
+
   .arg-flag-stripe {
     position: fixed;
     left: 0; right: 0;
@@ -939,6 +968,85 @@
     .music-player { bottom: 75px; right: 12px; }
     .music-player-card { width: 210px; }
   }
+  /* BRACKET / CLASIFICADOS */
+  .bracket-fase {
+    margin: 0 0 20px;
+  }
+
+  .bracket-fase-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: var(--gold);
+    padding: 0 16px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .bracket-fase-title .linea {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--gold), transparent);
+  }
+
+  .bracket-match {
+    margin: 0 12px 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .bracket-match.definido { border-color: rgba(245,166,35,.3); }
+
+  .bracket-team {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .bracket-team:last-child { border-bottom: none; }
+
+  .bracket-team.ganador {
+    color: var(--green);
+    background: rgba(16,185,129,.08);
+  }
+
+  .bracket-team.ganador .bracket-team-name::after {
+    content: ' ✓';
+    color: var(--green);
+  }
+
+  .bracket-team.eliminado {
+    color: var(--text3);
+    opacity: .6;
+    text-decoration: line-through;
+  }
+
+  .bracket-team.pendiente {
+    color: var(--text2);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .bracket-team-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    min-width: 24px;
+    text-align: center;
+  }
+
+  .bracket-match-meta {
+    padding: 5px 12px;
+    font-size: 10px;
+    color: var(--text3);
+    background: rgba(255,255,255,.02);
+  }
 </style>
 </head>
 <body>
@@ -1012,9 +1120,10 @@
 
 <div class="nav">
   <div class="nav-inner">
-    <button class="nav-btn active" onclick="switchTab('inicio')">Inicio</button>
+    <button class="nav-btn" onclick="switchTab('inicio')">Inicio</button>
     <button class="nav-btn" onclick="switchTab('partidos')">Partidos</button>
     <button class="nav-btn" onclick="switchTab('pronosticos')">Pronósticos</button>
+    <button class="nav-btn" onclick="switchTab('clasificados')">Clasificados</button>
     <button class="nav-btn" onclick="switchTab('ranking')">Ranking</button>
     <button class="nav-btn" onclick="switchTab('premio')">🏅 Premio</button>
   </div>
@@ -1097,6 +1206,19 @@
     </div>
   </div>
 
+  <!-- CLASIFICADOS / BRACKET -->
+  <div class="tab-content" id="tab-clasificados">
+    <div class="section-header">
+      <div class="section-title">🏟️ Camino al título</div>
+    </div>
+    <div style="padding: 0 16px 12px; font-size:12px; color:var(--text3);">
+      Seguí los cruces de eliminación directa, fase por fase.
+    </div>
+    <div id="bracket-container">
+      <div class="loading">Cargando bracket...</div>
+    </div>
+  </div>
+
   <!-- RANKING -->
   <div class="tab-content" id="tab-ranking">
     <div class="section-header">
@@ -1171,6 +1293,7 @@
     <button class="bottom-btn active" onclick="switchTab('inicio')"><span class="bottom-btn-icon">🏠</span>Inicio</button>
     <button class="bottom-btn" onclick="switchTab('partidos')"><span class="bottom-btn-icon">⚽</span>Partidos</button>
     <button class="bottom-btn" onclick="switchTab('pronosticos')"><span class="bottom-btn-icon">✏️</span>Pronóst.</button>
+    <button class="bottom-btn" onclick="switchTab('clasificados')"><span class="bottom-btn-icon">🏟️</span>Clasif.</button>
     <button class="bottom-btn" onclick="switchTab('ranking')"><span class="bottom-btn-icon">🏆</span>Ranking</button>
     <button class="bottom-btn" onclick="switchTab('premio')"><span class="bottom-btn-icon">🏅</span>Premio</button>
   </div>
@@ -1562,6 +1685,7 @@ function renderAll() {
   renderInicio();
   renderPartidos();
   renderPronosticos();
+  renderBracket();
   renderRanking();
 }
 
@@ -1596,6 +1720,83 @@ function renderInicio() {
   // Próximos: TODOS agrupados por fecha + ordenados por hora
   document.getElementById('upcoming-matches').innerHTML =
     renderDateGroups(upcoming, 'No hay próximos partidos');
+}
+
+// --- BRACKET / CLASIFICADOS ---
+function renderBracket() {
+  const container = document.getElementById('bracket-container');
+  if (!container) return;
+
+  // Solo partidos de fases de eliminación directa (IDs 73 al 104 según el fixture)
+  const fasesOrden = ['Ronda 32', 'Octavos', 'Cuartos', 'Semifinal', 'Tercer puesto', 'Final'];
+  const partidosElim = allPartidos.filter(p => fasesOrden.includes(p.fase));
+
+  if (!partidosElim.length) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">🏟️</div><div class="empty-text">El bracket se habilita cuando termina la fase de grupos</div></div>';
+    return;
+  }
+
+  // Es un código genérico tipo "1A", "2B", "3A/B/C/D/F", o ya es un nombre real de equipo
+  function esCodigoPendiente(nombre) {
+    if (!nombre) return true;
+    return /^[123][A-L](\/[A-L])*$/.test(nombre.trim());
+  }
+
+  function renderBracketTeam(nombre, golPropio, golRival, esFinalizado, ganoEsteEquipo) {
+    const esPendiente = esCodigoPendiente(nombre);
+    let claseEquipo = '';
+    if (esPendiente) {
+      claseEquipo = 'pendiente';
+    } else if (esFinalizado) {
+      claseEquipo = ganoEsteEquipo ? 'ganador' : 'eliminado';
+    }
+    const nombreMostrar = esPendiente ? nombre : nombre;
+    const flag = esPendiente ? '🏳️' : getFlag(nombre);
+    const score = (golPropio !== '' && golPropio !== null && golPropio !== undefined) ? golPropio : '–';
+
+    return `
+      <div class="bracket-team ${claseEquipo}">
+        <span class="bracket-team-name">${flag} ${nombreMostrar}</span>
+        ${esFinalizado ? `<span class="bracket-team-score">${score}</span>` : ''}
+      </div>`;
+  }
+
+  function renderBracketMatch(p) {
+    const local      = p.equipo_local || p.local || '';
+    const visitante   = p.equipo_visitante || p.visitante || '';
+    const estado      = normalizeEstado(p.estado);
+    const esFinalizado = estado === 'Finalizado';
+    const gL = p.gol_local ?? p.goles_local ?? '';
+    const gV = p.gol_visitante ?? p.goles_visitante ?? '';
+    const ganoLocal     = esFinalizado && Number(gL) > Number(gV);
+    const ganoVisitante = esFinalizado && Number(gV) > Number(gL);
+
+    const horaRaw = p.hora_arg || p.hora || '';
+    const horaStr = String(horaRaw).substring(0, 5);
+    const fechaStr = p.fecha || '';
+
+    return `
+      <div class="bracket-match ${esFinalizado ? 'definido' : ''}">
+        ${renderBracketTeam(local, gL, gV, esFinalizado, ganoLocal)}
+        ${renderBracketTeam(visitante, gV, gL, esFinalizado, ganoVisitante)}
+        <div class="bracket-match-meta">📍 ${p.estadio || ''} ${fechaStr ? '· ' + fechaStr : ''} ${horaStr ? '· ' + horaStr : ''}</div>
+      </div>`;
+  }
+
+  let html = '';
+  fasesOrden.forEach(fase => {
+    const partidosFase = partidosElim.filter(p => p.fase === fase)
+      .sort((a, b) => getPartidoTimestamp(a) - getPartidoTimestamp(b));
+    if (!partidosFase.length) return;
+
+    html += `
+      <div class="bracket-fase">
+        <div class="bracket-fase-title">🏆 ${fase}<span class="linea"></span></div>
+        ${partidosFase.map(renderBracketMatch).join('')}
+      </div>`;
+  });
+
+  container.innerHTML = html;
 }
 
 function normalizeEstado(e) {
@@ -1865,7 +2066,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-btn, .bottom-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-  const idx = ['inicio','partidos','pronosticos','ranking','premio'].indexOf(tab);
+  const idx = ['inicio','partidos','pronosticos','clasificados','ranking','premio'].indexOf(tab);
   document.querySelectorAll('.nav-btn')[idx]?.classList.add('active');
   document.querySelectorAll('.bottom-btn')[idx]?.classList.add('active');
 }
@@ -1986,6 +2187,19 @@ function initArgentina() {
       star.style.animationDuration = (3 + Math.random() * 4) + 's';
       star.style.fontSize = (10 + Math.random() * 20) + 'px';
       container.appendChild(star);
+    }
+
+    // Banderas argentinas cayendo desde arriba (dibujadas en CSS, no emoji)
+    for (let i = 0; i < 14; i++) {
+      const flag = document.createElement('div');
+      flag.className = 'arg-flag-fall';
+      const escala = 0.8 + Math.random() * 0.9;
+      flag.style.left = Math.random() * 100 + '%';
+      flag.style.animationDelay    = Math.random() * 6 + 's';
+      flag.style.animationDuration = (4 + Math.random() * 3) + 's';
+      flag.style.width  = (28 * escala) + 'px';
+      flag.style.height = (18 * escala) + 'px';
+      container.appendChild(flag);
     }
   }
 
