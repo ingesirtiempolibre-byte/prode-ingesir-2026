@@ -543,10 +543,11 @@
   }
 
   .match-body {
-    padding: 14px 12px;
+    padding: 14px 12px 20px;
     display: flex;
     align-items: center;
     gap: 8px;
+    position: relative;
   }
 
   .team {
@@ -1879,6 +1880,24 @@ function renderInicio() {
 
 // --- BRACKET / CLASIFICADOS ---
 // Es un código genérico tipo "1A", "2B", "3A/B/C/D/F", "W74", "L101", o ya es un nombre real de equipo
+// Determina ganador de un partido de eliminación, considerando penales si los hubo.
+// No afecta el cálculo de puntos de pronósticos (eso sigue usando solo los goles de 90 min).
+function determinarGanadorBracket(p, local, visitante, gL, gV, esFinalizado) {
+  const penales = String(p.ganador_penales || '').trim();
+  if (penales) {
+    // Si hay un valor en GANADOR_PENALES, ese nombre define quién avanza
+    return {
+      ganoLocal: penales.toLowerCase() === local.toLowerCase(),
+      ganoVisitante: penales.toLowerCase() === visitante.toLowerCase(),
+    };
+  }
+  // Sin penales registrados: se decide por los goles, igual que siempre
+  return {
+    ganoLocal: esFinalizado && Number(gL) > Number(gV),
+    ganoVisitante: esFinalizado && Number(gV) > Number(gL),
+  };
+}
+
 function esCodigoPendiente(nombre) {
   if (!nombre) return true;
   const n = nombre.trim();
@@ -1926,18 +1945,18 @@ function renderBracket() {
     const esFinalizado = estado === 'Finalizado';
     const gL = p.gol_local ?? p.goles_local ?? '';
     const gV = p.gol_visitante ?? p.goles_visitante ?? '';
-    const ganoLocal     = esFinalizado && Number(gL) > Number(gV);
-    const ganoVisitante = esFinalizado && Number(gV) > Number(gL);
+    const { ganoLocal, ganoVisitante } = determinarGanadorBracket(p, local, visitante, gL, gV, esFinalizado);
 
     const horaRaw = p.hora_arg || p.hora || '';
     const horaStr = String(horaRaw).substring(0, 5);
     const fechaStr = p.fecha ? formatDateGroupLabel(p.fecha) : '';
+    const penalesTxt = String(p.ganador_penales || '').trim() ? ' (pen.)' : '';
     const metaTexto = [fechaStr, horaStr ? horaStr + 'hs' : '', p.estadio ? '📍 ' + p.estadio : '']
       .filter(Boolean).join(' · ');
 
     return `
       <div class="bracket-match ${esFinalizado ? 'definido' : ''}">
-        ${metaTexto ? `<div class="bracket-match-meta bracket-match-meta-top">${metaTexto}</div>` : ''}
+        ${metaTexto ? `<div class="bracket-match-meta bracket-match-meta-top">${metaTexto}${penalesTxt}</div>` : ''}
         ${renderBracketTeam(local, gL, gV, esFinalizado, ganoLocal)}
         ${renderBracketTeam(visitante, gV, gL, esFinalizado, ganoVisitante)}
       </div>`;
@@ -1976,12 +1995,12 @@ function renderBracketHorizontal(partidosElim, fasesOrden, renderTeamFn) {
     const esFinalizado = estado === 'Finalizado';
     const gL = p.gol_local ?? p.goles_local ?? '';
     const gV = p.gol_visitante ?? p.goles_visitante ?? '';
-    const ganoLocal     = esFinalizado && Number(gL) > Number(gV);
-    const ganoVisitante = esFinalizado && Number(gV) > Number(gL);
+    const { ganoLocal, ganoVisitante } = determinarGanadorBracket(p, local, visitante, gL, gV, esFinalizado);
 
     const horaRaw = p.hora_arg || p.hora || '';
     const horaStr = String(horaRaw).substring(0, 5);
     const fechaStr = p.fecha ? formatDateGroupLabel(p.fecha) : '';
+    const penalesTxt = String(p.ganador_penales || '').trim() ? ' (pen.)' : '';
     const metaTexto = [fechaStr, horaStr ? horaStr + 'hs' : '', p.estadio ? '📍 ' + p.estadio : '']
       .filter(Boolean).join(' · ');
 
@@ -2001,7 +2020,7 @@ function renderBracketHorizontal(partidosElim, fasesOrden, renderTeamFn) {
 
     return `
       <div class="bracket-h-match ${esFinalizado ? 'definido' : ''}">
-        ${metaTexto ? `<div class="bracket-h-match-meta">${metaTexto}</div>` : ''}
+        ${metaTexto ? `<div class="bracket-h-match-meta">${metaTexto}${penalesTxt}</div>` : ''}
         ${team(local, gL, ganoLocal)}
         ${team(visitante, gV, ganoVisitante)}
       </div>`;
@@ -2115,6 +2134,7 @@ function renderMatchCard(p) {
         <div class="score">${gL}</div>
         <div class="score-div">:</div>
         <div class="score">${gV}</div>
+        ${p.goles_penales || p.ganador_penales ? `<div style="font-size:9px;color:var(--gold);text-align:center;position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);white-space:nowrap;">pen. ${p.goles_penales || ''}</div>` : ''}
       </div>
       <div class="team">
         <div class="team-flag">${getFlagImg(visitant, 32)}</div>
